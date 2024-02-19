@@ -6,12 +6,13 @@
   "repository": "https://github.com/lune-climate/lune-ef-mapping-tool",
   "author": "Lune",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "prettier": "prettier --check \"src/**/*.ts\"",
     "eslint": "eslint \"src/**/*.ts\"",
     "lint": "yarn eslint && yarn prettier",
     "fix": "eslint --fix \"src/**/*.ts\" && prettier --write \"src/**/*.ts\"",
-    "build": "tsc --build --incremental tsconfig.json",
+    "build": "tsc --build --incremental tsconfig.json && ( test -e node_modules/src || ln -s ../dist/src node_modules/src )",
     "map": "node dist/src/index.js"
   },
   "devDependencies": {
@@ -26,5 +27,12 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@lune-climate/lune": "^2.16.0",
+    "commander": "^12.0.0",
+    "csv-parse": "^5.5.3",
+    "csv-stringify": "^6.4.5",
+    "ts-results-es": "^4.1.0-alpha.1"
   }
 }
