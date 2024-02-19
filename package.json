@@ -1,0 +1,13 @@
+{
+  "name": "lune-ef-mapping-tool",
+  "version": "1.0.0",
+  "description": "This tool helps clients to map their own labels/names/classifications to Lune emission factor ids.",
+  "main": "index.js",
+  "repository": "https://github.com/lune-climate/lune-ef-mapping-tool",
+  "author": "Lune",
+  "license": "MIT",
+  "devDependencies": {
+    "@lune-climate/eslint-config": "git+https://github.com/lune-climate/eslint-config.git#master",
+    "typescript": "^5.3.3"
+  }
+}
