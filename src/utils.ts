@@ -1,8 +1,8 @@
-import { readFile } from "fs/promises";
-import { fileURLToPath } from "url";
+import { readFile } from 'fs/promises'
+import { fileURLToPath } from 'url'
 
-import { parse as parseCsv } from "csv-parse/sync";
-import { Err, Ok, Result } from "ts-results-es";
+import { parse as parseCsv } from 'csv-parse/sync'
+import { Err, Ok, Result } from 'ts-results-es'
 
 /**
  * A `Result`-aware variant of `fs/promises.readFile()`.
@@ -18,11 +18,11 @@ import { Err, Ok, Result } from "ts-results-es";
  * useful only when read by humans.
  */
 async function readFileChecked(path: string): Promise<Result<Buffer, string>> {
-  try {
-    return Ok(await readFile(path));
-  } catch (e) {
-    return Err(`Failed to load ${path}: ${e}`);
-  }
+    try {
+        return Ok(await readFile(path))
+    } catch (e) {
+        return Err(`Failed to load ${path}: ${e}`)
+    }
 }
 
 /**
@@ -39,11 +39,11 @@ async function readFileChecked(path: string): Promise<Result<Buffer, string>> {
  * useful only when read by humans.
  */
 export function parseCsvChecked(buffer: Buffer): Result<object[], string> {
-  try {
-    return Ok(parseCsv(buffer, { columns: true }));
-  } catch (e) {
-    return Err(`Failed to parse CSV content: ${e}`);
-  }
+    try {
+        return Ok(parseCsv(buffer, { columns: true }))
+    } catch (e) {
+        return Err(`Failed to parse CSV content: ${e}`)
+    }
 }
 
 /**
@@ -64,36 +64,34 @@ export function parseCsvChecked(buffer: Buffer): Result<object[], string> {
  * The `Err()` contents are intended purely for human consumption.
  */
 export async function loadCsvSelectedFields<const T extends readonly string[]>(
-  path: string,
-  fields: T,
+    path: string,
+    fields: T,
 ): Promise<Result<Record<T[number], string>[], string>> {
-  const rawContent = await readFileChecked(path);
-  if (rawContent.isErr()) {
-    return rawContent;
-  }
-
-  function onlySelectedFields(o: unknown): unknown {
-    if (typeof o !== "object" || o === null) {
-      return o;
+    const rawContent = await readFileChecked(path)
+    if (rawContent.isErr()) {
+        return rawContent
     }
-    return Object.fromEntries(
-      Object.entries(o).filter(([name, _value]) => fields.includes(name)),
-    );
-  }
 
-  return rawContent
-    .andThen(parseCsvChecked)
-    .andThen((parsed) =>
-      passArray(parsed, (item) =>
-        passStringRecord(onlySelectedFields(item), fields),
-      ),
-    );
+    function onlySelectedFields(o: unknown): unknown {
+        if (typeof o !== 'object' || o === null) {
+            return o
+        }
+        return Object.fromEntries(
+            Object.entries(o).filter(([name, _value]) => fields.includes(name)),
+        )
+    }
+
+    return rawContent
+        .andThen(parseCsvChecked)
+        .andThen((parsed) =>
+            passArray(parsed, (item) => passStringRecord(onlySelectedFields(item), fields)),
+        )
 }
 
 export function isRunningAsScript(moduleUrl: string): boolean {
-  // Use like this: isRunningAsScript(import.meta.url). This will return true if the module
-  // is run like this: node path/to/module.js
-  return process.argv[1] === fileURLToPath(moduleUrl);
+    // Use like this: isRunningAsScript(import.meta.url). This will return true if the module
+    // is run like this: node path/to/module.js
+    return process.argv[1] === fileURLToPath(moduleUrl)
 }
 
 /**
@@ -104,25 +102,25 @@ export function isRunningAsScript(moduleUrl: string): boolean {
  * @returns The properly typed array wrapped in Ok() on success, Err() on failure.
  */
 export function passArray<T>(
-  value: unknown,
-  validator: (item: unknown) => Result<T, string>,
+    value: unknown,
+    validator: (item: unknown) => Result<T, string>,
 ): Result<T[], string> {
-  if (!Array.isArray(value)) {
-    return Err(`${value} is not an array`);
-  }
+    if (!Array.isArray(value)) {
+        return Err(`${value} is not an array`)
+    }
 
-  if (value.length === 0) {
-    return Err("The array is empty");
-  }
+    if (value.length === 0) {
+        return Err('The array is empty')
+    }
 
-  const errors = value
-    .map((item, index) => validator(item).mapErr((e) => `${index}: ${e}`))
-    .filter((result) => result.isErr());
-  if (errors.length > 0) {
-    return Err(`One or more items failed validation: ${errors.join(", ")}`);
-  }
+    const errors = value
+        .map((item, index) => validator(item).mapErr((e) => `${index}: ${e}`))
+        .filter((result) => result.isErr())
+    if (errors.length > 0) {
+        return Err(`One or more items failed validation: ${errors.join(', ')}`)
+    }
 
-  return Ok(value);
+    return Ok(value)
 }
 
 /**
@@ -143,26 +141,23 @@ export function passArray<T>(
  * ```
  */
 export function passStringRecord<const T extends readonly string[]>(
-  value: unknown,
-  properties: T,
+    value: unknown,
+    properties: T,
 ): Result<{ [Key in T[number]]: string }, string> {
-  if (typeof value !== "object" || value === null) {
-    return Err(`${value} is not an object`);
-  }
-
-  for (const p of properties) {
-    const propertyValue =
-      p in value ? value[p as keyof typeof value] : undefined;
-    if (typeof propertyValue !== "string") {
-      return Err(`Property ${p} is not a string: ${typeof propertyValue}`);
+    if (typeof value !== 'object' || value === null) {
+        return Err(`${value} is not an object`)
     }
-  }
-  const unwantedProperties = Object.keys(value).filter(
-    (p) => !properties.includes(p),
-  );
-  if (unwantedProperties.length > 0) {
-    return Err(`Unwanted properties: ${unwantedProperties}`);
-  }
-  // SAFETY: This type assertion relies on conditions we verified above.
-  return Ok(value as { [Key in T[number]]: string });
+
+    for (const p of properties) {
+        const propertyValue = p in value ? value[p as keyof typeof value] : undefined
+        if (typeof propertyValue !== 'string') {
+            return Err(`Property ${p} is not a string: ${typeof propertyValue}`)
+        }
+    }
+    const unwantedProperties = Object.keys(value).filter((p) => !properties.includes(p))
+    if (unwantedProperties.length > 0) {
+        return Err(`Unwanted properties: ${unwantedProperties}`)
+    }
+    // SAFETY: This type assertion relies on conditions we verified above.
+    return Ok(value as { [Key in T[number]]: string })
 }
