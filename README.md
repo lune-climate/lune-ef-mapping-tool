@@ -8,4 +8,4 @@ This tool helps clients to map their own labels/names/classifications to Lune em
 * Install dependencies (requires `yarn`): `yarn`
 * Build the tool: `yarn build`
 * Run eslint and prettier checks: `yarn lint`
-* Run the tool: `yarn map`
+* Run the tool: `yarn map <filename>`
