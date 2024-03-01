@@ -88,6 +88,36 @@ export async function loadCsvSelectedFields<const T extends readonly string[]>(
         )
 }
 
+/**
+ * Load validated records from a CSV file.
+ *
+ * Like `loadCsvSelectedFields()` but here we have to specify all fields – any fields
+ * that we don't declare but are present in the CSV will cause validation failure.
+ *
+ * @param path The path to the CSV file.
+ * @param fields The fields we expect in the CSV.
+ *
+ * If not all fields are present or there are extra fields the validation will fail.
+ *
+ * The CSV file is expected to have field names in the first row.
+ *
+ * @returns `Ok()` with validated content on success, `Err()` in case of failure.
+ *
+ * The `Err()` contents are intended purely for human consumption.
+ */
+export async function loadCsv<const T extends readonly string[]>(
+    path: string,
+    fields: T,
+): Promise<Result<Record<T[number], string>[], string>> {
+    const rawContent = await readFileChecked(path)
+    if (rawContent.isErr()) {
+        return rawContent
+    }
+    return rawContent
+        .andThen(parseCsvChecked)
+        .andThen((parsed) => passArray(parsed, (item) => passStringRecord(item, fields)))
+}
+
 export function isRunningAsScript(moduleUrl: string): boolean {
     // Use like this: isRunningAsScript(import.meta.url). This will return true if the module
     // is run like this: node path/to/module.js
@@ -124,21 +154,8 @@ export function passArray<T>(
 }
 
 /**
- * Return Ok() if passed value is an object with only properties listed in `properties` and
- * all property values are strings, Err() otherwise.
- *
- * Useful for dealing with CSV records for example.
- *
- * @example
- * ```typescript
- *
- * // Pretend this value comes from somewhere and we don't know what's in there
- * const unknownCsvRecord = {'name': 'John', 'age': '20'} as unknown
- *
- * // `parsed` here is of type {name: string; age: string} which allows us to depend on the
- * // shape of the object and to access its properties safely.
- * const parsed = passStringRecord(unknownCsvRecord, ['name', 'age']).unwrap()
- * ```
+ * Return Ok() if passed value is an object with listed `properties`
+ * being strings, Err() otherwise.
  */
 export function passStringRecord<const T extends readonly string[]>(
     value: unknown,
@@ -153,10 +170,6 @@ export function passStringRecord<const T extends readonly string[]>(
         if (typeof propertyValue !== 'string') {
             return Err(`Property ${p} is not a string: ${typeof propertyValue}`)
         }
-    }
-    const unwantedProperties = Object.keys(value).filter((p) => !properties.includes(p))
-    if (unwantedProperties.length > 0) {
-        return Err(`Unwanted properties: ${unwantedProperties}`)
     }
     // SAFETY: This type assertion relies on conditions we verified above.
     return Ok(value as { [Key in T[number]]: string })
